@@ -1,7 +1,17 @@
+### bq_utils.py
 from google.cloud import bigquery
+from google.oauth2 import service_account
 import pandas as pd
+import os
+import json
 
-client = bigquery.Client()
+# Load credentials from Streamlit secrets if available
+if "GOOGLE_CREDENTIALS" in os.environ:
+    creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+    credentials = service_account.Credentials.from_service_account_info(creds_dict)
+    client = bigquery.Client(credentials=credentials)
+else:
+    client = bigquery.Client()
 
 def get_wallet_transactions(address, start_date, end_date, from_filter=None, to_filter=None):
     base_query = f"""
@@ -19,3 +29,4 @@ def get_wallet_transactions(address, start_date, end_date, from_filter=None, to_
     df = client.query(base_query).to_dataframe()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     return df.sort_values('timestamp', ascending=False)
+
